@@ -1,0 +1,152 @@
+{
+  "schema_version": 2,
+  "diagram_type": "workflow",
+  "meta": {
+    "title": "Document Ingestion & Indexing Pipeline",
+    "subtitle": "Asynchronous pipeline processing uploaded documents into chunked vector embeddings.",
+    "output": "custom-rag-workflow.html",
+    "quality_profile": "showcase"
+  },
+  "lanes": [
+    { "id": "client_lane", "label": "Client & Gateway" },
+    { "id": "worker_lane", "label": "Worker & Processing" },
+    { "id": "storage_lane", "label": "Datastores & Index" }
+  ],
+  "mainPath": [
+    "upload",
+    "parse_doc",
+    "chunk_doc",
+    "embed_chunks",
+    "store_vectors",
+    "status_poll"
+  ],
+  "nodes": [
+    {
+      "id": "upload",
+      "lane": "client_lane",
+      "col": 0,
+      "type": "frontend",
+      "label": "Upload Document",
+      "sublabel": "PDF / Markdown / TXT"
+    },
+    {
+      "id": "parse_doc",
+      "lane": "worker_lane",
+      "col": 1,
+      "type": "backend",
+      "label": "Extract & Clean",
+      "sublabel": "PyPDF / OCR extraction"
+    },
+    {
+      "id": "save_meta",
+      "lane": "storage_lane",
+      "col": 1,
+      "type": "database",
+      "label": "Save Metadata",
+      "sublabel": "PostgreSQL Record",
+      "brand": "postgresql",
+      "width": 120
+    },
+    {
+      "id": "chunk_doc",
+      "lane": "worker_lane",
+      "col": 2,
+      "type": "backend",
+      "label": "Semantic Chunking",
+      "sublabel": "500 tokens + 50 overlap"
+    },
+    {
+      "id": "embed_chunks",
+      "lane": "worker_lane",
+      "col": 3,
+      "type": "cloud",
+      "label": "Embed Chunks",
+      "sublabel": "text-embedding-3",
+      "brand": "openai",
+      "width": 120
+    },
+    {
+      "id": "store_vectors",
+      "lane": "storage_lane",
+      "col": 3,
+      "type": "database",
+      "label": "Store Vectors",
+      "sublabel": "ChromaDB / Pinecone"
+    },
+    {
+      "id": "status_poll",
+      "lane": "client_lane",
+      "col": 4,
+      "type": "frontend",
+      "label": "Indexing Complete",
+      "sublabel": "Ready for Query"
+    }
+  ],
+  "edges": [
+    {
+      "from": "upload",
+      "to": "parse_doc",
+      "label": "async celery task",
+      "variant": "emphasis"
+    },
+    {
+      "from": "parse_doc",
+      "to": "save_meta",
+      "label": "doc headers",
+      "variant": "default"
+    },
+    {
+      "from": "parse_doc",
+      "to": "chunk_doc",
+      "label": "extracted text",
+      "variant": "emphasis"
+    },
+    {
+      "from": "chunk_doc",
+      "to": "embed_chunks",
+      "label": "chunk batches",
+      "variant": "emphasis"
+    },
+    {
+      "from": "embed_chunks",
+      "to": "store_vectors",
+      "label": "vector payloads",
+      "variant": "default"
+    },
+    {
+      "from": "store_vectors",
+      "to": "status_poll",
+      "label": "index active",
+      "variant": "emphasis"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Document Parsing",
+      "items": [
+        "Handles binary PDF and Markdown payloads asynchronously",
+        "Extracts metadata (author, file size, pages) into PostgreSQL",
+        "Normalizes whitespace and strips non-printable characters"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Sliding Window Chunks",
+      "items": [
+        "500-token semantic windows with 50-token overlap",
+        "Preserves boundary context across section breaks",
+        "Attaches parent document IDs and chunk index tags"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Vector Insertion",
+      "items": [
+        "Batches embedding requests to optimize throughput",
+        "Inserts dense embeddings with HNSW cosine distance index",
+        "Fires webhook notifying user of readiness"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,184 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "RAG Knowledge Engine — v2 Architecture",
+    "subtitle": "Evolved architecture adding Redis semantic cache and Cross-Encoder reranker.",
+    "output": "custom-rag-v2.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "client",
+      "type": "frontend",
+      "label": "Web App Client",
+      "sublabel": "Next.js / React",
+      "brand": "react",
+      "pos": [40, 180],
+      "size": [120, 54]
+    },
+    {
+      "id": "api_gateway",
+      "type": "backend",
+      "label": "API Service Gateway",
+      "sublabel": "FastAPI",
+      "brand": "fastapi",
+      "pos": [300, 180],
+      "size": [140, 54]
+    },
+    {
+      "id": "relational_db",
+      "type": "database",
+      "label": "Metadata Storage",
+      "sublabel": "PostgreSQL",
+      "brand": "postgresql",
+      "pos": [300, 50],
+      "size": [140, 50]
+    },
+    {
+      "id": "semantic_cache",
+      "type": "database",
+      "label": "Semantic Cache",
+      "sublabel": "Redis Store",
+      "brand": "redis",
+      "pos": [580, 50],
+      "size": [140, 50]
+    },
+    {
+      "id": "vector_db",
+      "type": "database",
+      "label": "Vector Store",
+      "sublabel": "ChromaDB / Pinecone",
+      "pos": [580, 180],
+      "size": [140, 54]
+    },
+    {
+      "id": "task_queue",
+      "type": "messagebus",
+      "label": "Document Processor",
+      "sublabel": "Celery & Redis",
+      "brand": "redis",
+      "pos": [580, 310],
+      "size": [140, 54]
+    },
+    {
+      "id": "reranker",
+      "type": "backend",
+      "label": "Reranker Service",
+      "sublabel": "Cross-Encoder",
+      "pos": [860, 180],
+      "size": [140, 54]
+    },
+    {
+      "id": "llm_api",
+      "type": "cloud",
+      "label": "LLM Inference",
+      "sublabel": "Groq / OpenAI",
+      "brand": "openai",
+      "pos": [1140, 180],
+      "size": [150, 54]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Backend Services & Storage",
+      "wraps": ["api_gateway", "relational_db", "semantic_cache", "vector_db", "task_queue", "reranker"]
+    }
+  ],
+  "connections": [
+    {
+      "id": "client-to-gateway",
+      "from": "client",
+      "to": "api_gateway",
+      "label": "REST API / WebSockets",
+      "variant": "emphasis",
+      "labelDy": -22
+    },
+    {
+      "id": "gateway-to-db",
+      "from": "api_gateway",
+      "to": "relational_db",
+      "label": "User Auth & Metadata",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelDx": 14
+    },
+    {
+      "id": "gateway-to-cache",
+      "from": "api_gateway",
+      "to": "semantic_cache",
+      "label": "Semantic Cache Lookup",
+      "fromSide": "right",
+      "toSide": "bottom"
+    },
+    {
+      "id": "gateway-to-vectordb",
+      "from": "api_gateway",
+      "to": "vector_db",
+      "label": "Similarity Query",
+      "labelDy": -22
+    },
+    {
+      "id": "vectordb-to-reranker",
+      "from": "vector_db",
+      "to": "reranker",
+      "label": "Top-20 Chunks",
+      "labelDy": -22
+    },
+    {
+      "id": "reranker-to-llm",
+      "from": "reranker",
+      "to": "llm_api",
+      "label": "Top-5 Reranked Context",
+      "variant": "emphasis",
+      "labelDy": -22
+    },
+    {
+      "id": "gateway-to-queue",
+      "from": "api_gateway",
+      "to": "task_queue",
+      "label": "Async File Uploads",
+      "fromSide": "bottom",
+      "toSide": "left"
+    },
+    {
+      "id": "queue-to-vectordb",
+      "from": "task_queue",
+      "to": "vector_db",
+      "label": "Store Embeddings",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelDx": 14
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "API Gateway",
+      "items": [
+        "FastAPI service routing client traffic",
+        "Checks Redis semantic cache before triggering embedding search",
+        "Validates auth sessions against PostgreSQL metadata"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Two-Stage Retrieval",
+      "items": [
+        "Stage 1: ChromaDB ANN search pulls top-20 candidate chunks",
+        "Stage 2: Cross-encoder reranks candidates for maximum precision",
+        "Passes curated top-5 chunks to LLM prompt"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Ingestion Pipeline",
+      "items": [
+        "Celery background workers backed by Redis",
+        "Extracts, chunks, and embeds uploaded documents",
+        "Stores high-dimensional vectors directly to vector store"
+      ]
+    }
+  ]
+}

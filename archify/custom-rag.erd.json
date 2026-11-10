@@ -1,0 +1,150 @@
+{
+  "schema_version": 1,
+  "diagram_type": "erd",
+  "meta": {
+    "title": "RAG Knowledge Base & Citation Schema",
+    "subtitle": "Relational entity model for ingestion chunks, vector embeddings, and query citations.",
+    "output": "custom-rag-erd.html",
+    "quality_profile": "showcase"
+  },
+  "layout": {
+    "mode": "grid",
+    "gapX": 90,
+    "gapY": 60
+  },
+  "entities": [
+    {
+      "id": "document",
+      "label": "document",
+      "tag": "content",
+      "row": 0,
+      "col": 0,
+      "attributes": [
+        { "name": "id", "type": "bigint", "key": "pk" },
+        { "name": "title", "type": "varchar(255)" },
+        { "name": "source_url", "type": "text" },
+        { "name": "created_at", "type": "timestamptz" }
+      ]
+    },
+    {
+      "id": "document_chunk",
+      "label": "document_chunk",
+      "tag": "chunks",
+      "row": 0,
+      "col": 1,
+      "attributes": [
+        { "name": "id", "type": "bigint", "key": "pk" },
+        { "name": "document_id", "type": "bigint", "key": "fk", "references": "document.id" },
+        { "name": "chunk_index", "type": "int" },
+        { "name": "content", "type": "text" },
+        { "name": "token_count", "type": "int" }
+      ]
+    },
+    {
+      "id": "embedding",
+      "label": "embedding",
+      "tag": "vectors",
+      "row": 0,
+      "col": 2,
+      "attributes": [
+        { "name": "id", "type": "bigint", "key": "pk" },
+        { "name": "chunk_id", "type": "bigint", "key": "fk", "references": "document_chunk.id" },
+        { "name": "model_name", "type": "varchar(64)" },
+        { "name": "vector_dim", "type": "int" }
+      ]
+    },
+    {
+      "id": "query_log",
+      "label": "query_log",
+      "tag": "analytics",
+      "row": 1,
+      "col": 0,
+      "attributes": [
+        { "name": "id", "type": "bigint", "key": "pk" },
+        { "name": "user_id", "type": "bigint" },
+        { "name": "query_text", "type": "text" },
+        { "name": "response_text", "type": "text" },
+        { "name": "latency_ms", "type": "int" }
+      ]
+    },
+    {
+      "id": "query_citation",
+      "label": "query_citation",
+      "tag": "citations",
+      "row": 1,
+      "col": 1,
+      "attributes": [
+        { "name": "id", "type": "bigint", "key": "pk" },
+        { "name": "query_id", "type": "bigint", "key": "fk", "references": "query_log.id" },
+        { "name": "chunk_id", "type": "bigint", "key": "fk", "references": "document_chunk.id" },
+        { "name": "similarity_score", "type": "float" }
+      ]
+    }
+  ],
+  "relationships": [
+    {
+      "id": "doc-to-chunks",
+      "from": "document",
+      "to": "document_chunk",
+      "fromCardinality": "one",
+      "toCardinality": "many",
+      "label": "splits into"
+    },
+    {
+      "id": "chunk-to-embedding",
+      "from": "document_chunk",
+      "to": "embedding",
+      "fromCardinality": "one",
+      "toCardinality": "one",
+      "label": "vector index"
+    },
+    {
+      "id": "query-to-citations",
+      "from": "query_log",
+      "to": "query_citation",
+      "fromCardinality": "one",
+      "toCardinality": "many",
+      "label": "produces citations"
+    },
+    {
+      "id": "chunk-to-citation",
+      "from": "document_chunk",
+      "to": "query_citation",
+      "fromCardinality": "one",
+      "toCardinality": "many",
+      "fromSide": "bottom",
+      "toSide": "top",
+      "label": "referenced in"
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "Document Chunks",
+      "items": [
+        "Raw source files are chunked into semantic paragraphs",
+        "Each chunk preserves its document FK and original token count",
+        "Deletions cascade down from parent document to child chunks"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Vector Embeddings",
+      "items": [
+        "Each chunk is embedded into 1536-dim or 768-dim space",
+        "Stores the model name alongside dimensions for re-indexing",
+        "One-to-one mapping with document chunks"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Citation Tracking",
+      "items": [
+        "Logs every prompt query and generated response",
+        "Tracks exactly which chunks contributed to each answer",
+        "Records cosine similarity scores for attribution auditing"
+      ]
+    }
+  ]
+}
+

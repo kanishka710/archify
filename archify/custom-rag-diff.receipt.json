@@ -1,0 +1,169 @@
+{
+  "schemaVersion": 1,
+  "ok": true,
+  "command": "compare",
+  "type": "architecture",
+  "comparatorVersion": 1,
+  "canonicalVersion": 1,
+  "completeness": "complete",
+  "proofLevel": "authored",
+  "base": {
+    "title": "RAG Knowledge Engine & Ingestion Pipeline",
+    "rawSha256": "2fc2ee0bd7106ef10f3441413bf725ed61ba0051c7415d5af22325c94dbf2d75",
+    "semanticSha256": "f6c61a5f4d57ee8fa7bc92465072a3d1184e1d97c00a19b9f51c6157862409d8",
+    "bytes": 3696
+  },
+  "head": {
+    "title": "RAG Knowledge Engine — v2 Architecture",
+    "rawSha256": "02ce76b2be52f34b17f92a11962c270f2f56f9c9b24b31c7c8b8b8c13a2fdfa1",
+    "semanticSha256": "c90ab9939485cda7ec92e1037bc7873328d30f7661ec0a710adad003b23de08d",
+    "bytes": 4510
+  },
+  "summary": {
+    "components": {
+      "added": 2,
+      "changed": 0,
+      "evidenceChanged": 0,
+      "removed": 0,
+      "moved": 1
+    },
+    "connections": {
+      "added": 3,
+      "changed": 0,
+      "removed": 1,
+      "rerouted": 0
+    },
+    "boundaries": {
+      "added": 0,
+      "changed": 1,
+      "removed": 0,
+      "geometryChanged": 0
+    },
+    "presentationChanged": true,
+    "provenanceChanged": false
+  },
+  "changes": {
+    "components": [
+      {
+        "id": "llm_api",
+        "baseLabel": "LLM Inference",
+        "headLabel": "LLM Inference",
+        "status": "moved",
+        "classifications": [
+          "geometry"
+        ],
+        "changedFields": [
+          "/pos"
+        ]
+      },
+      {
+        "id": "reranker",
+        "headLabel": "Reranker Service",
+        "status": "added",
+        "classifications": [
+          "semantic"
+        ],
+        "changedFields": []
+      },
+      {
+        "id": "semantic_cache",
+        "headLabel": "Semantic Cache",
+        "status": "added",
+        "classifications": [
+          "semantic"
+        ],
+        "changedFields": []
+      }
+    ],
+    "connections": [
+      {
+        "id": "gateway-to-cache",
+        "head": {
+          "from": "api_gateway",
+          "to": "semantic_cache",
+          "label": "Semantic Cache Lookup"
+        },
+        "status": "added",
+        "classifications": [
+          "topology"
+        ],
+        "changedFields": []
+      },
+      {
+        "id": "reranker-to-llm",
+        "head": {
+          "from": "reranker",
+          "to": "llm_api",
+          "label": "Top-5 Reranked Context"
+        },
+        "status": "added",
+        "classifications": [
+          "topology"
+        ],
+        "changedFields": []
+      },
+      {
+        "id": "vectordb-to-llm",
+        "base": {
+          "from": "vector_db",
+          "to": "llm_api",
+          "label": "Prompt + Context Payloads"
+        },
+        "status": "removed",
+        "classifications": [
+          "topology"
+        ],
+        "changedFields": []
+      },
+      {
+        "id": "vectordb-to-reranker",
+        "head": {
+          "from": "vector_db",
+          "to": "reranker",
+          "label": "Top-20 Chunks"
+        },
+        "status": "added",
+        "classifications": [
+          "topology"
+        ],
+        "changedFields": []
+      }
+    ],
+    "boundaries": [
+      {
+        "key": "region:Backend Services & Storage",
+        "kind": "region",
+        "label": "Backend Services & Storage",
+        "status": "changed",
+        "classifications": [
+          "scope"
+        ],
+        "changedFields": [
+          "/wraps"
+        ]
+      }
+    ]
+  },
+  "identity": {
+    "components": "components[].id",
+    "connections": "connections[].id (required)",
+    "boundaries": "boundaries[].kind + boundaries[].label (derived)"
+  },
+  "view": {
+    "visualPreset": "classic"
+  },
+  "limitations": [
+    "Authored Architecture IR only; no runtime impact, causality, risk, or mergeability is inferred.",
+    "Boundary identity is conservatively derived from kind + label."
+  ],
+  "artifact": {
+    "sha256": "456230a7db1933c814ba95dd2b848877e6e561bdfd03f2d4892abd28e1cda54b",
+    "bytes": 2395346
+  },
+  "validation": {
+    "checksPassed": 28,
+    "checkCount": 28,
+    "baseComposition": "pass",
+    "headComposition": "pass"
+  }
+}

@@ -1,0 +1,152 @@
+{
+  "schema_version": 1,
+  "diagram_type": "architecture",
+  "meta": {
+    "title": "RAG Knowledge Engine & Ingestion Pipeline",
+    "subtitle": "Production architecture covering document processing, vector search, and API gateway routing.",
+    "output": "custom-rag.html",
+    "quality_profile": "showcase"
+  },
+  "components": [
+    {
+      "id": "client",
+      "type": "frontend",
+      "label": "Web App Client",
+      "sublabel": "Next.js / React",
+      "brand": "react",
+      "pos": [40, 180],
+      "size": [120, 54]
+    },
+    {
+      "id": "api_gateway",
+      "type": "backend",
+      "label": "API Service Gateway",
+      "sublabel": "FastAPI",
+      "brand": "fastapi",
+      "pos": [300, 180],
+      "size": [140, 54]
+    },
+    {
+      "id": "relational_db",
+      "type": "database",
+      "label": "Metadata Storage",
+      "sublabel": "PostgreSQL",
+      "brand": "postgresql",
+      "pos": [300, 50],
+      "size": [140, 50]
+    },
+    {
+      "id": "vector_db",
+      "type": "database",
+      "label": "Vector Store",
+      "sublabel": "ChromaDB / Pinecone",
+      "pos": [580, 180],
+      "size": [140, 54]
+    },
+    {
+      "id": "task_queue",
+      "type": "messagebus",
+      "label": "Document Processor",
+      "sublabel": "Celery & Redis",
+      "brand": "redis",
+      "pos": [580, 310],
+      "size": [140, 54]
+    },
+    {
+      "id": "llm_api",
+      "type": "cloud",
+      "label": "LLM Inference",
+      "sublabel": "Groq / OpenAI",
+      "brand": "openai",
+      "pos": [860, 180],
+      "size": [150, 54]
+    }
+  ],
+  "boundaries": [
+    {
+      "kind": "region",
+      "label": "Backend Services & Storage",
+      "wraps": ["api_gateway", "relational_db", "vector_db", "task_queue"]
+    }
+  ],
+  "connections": [
+    {
+      "id": "client-to-gateway",
+      "from": "client",
+      "to": "api_gateway",
+      "label": "REST API / WebSockets",
+      "variant": "emphasis",
+      "labelDy": -22
+    },
+    {
+      "id": "gateway-to-db",
+      "from": "api_gateway",
+      "to": "relational_db",
+      "label": "User Auth & Metadata",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelDx": 14
+    },
+    {
+      "id": "gateway-to-vectordb",
+      "from": "api_gateway",
+      "to": "vector_db",
+      "label": "Similarity Query",
+      "labelDy": -22
+    },
+    {
+      "id": "vectordb-to-llm",
+      "from": "vector_db",
+      "to": "llm_api",
+      "label": "Prompt + Context Payloads",
+      "variant": "emphasis",
+      "labelDy": -22
+    },
+    {
+      "id": "gateway-to-queue",
+      "from": "api_gateway",
+      "to": "task_queue",
+      "label": "Async File Uploads",
+      "fromSide": "bottom",
+      "toSide": "left"
+    },
+    {
+      "id": "queue-to-vectordb",
+      "from": "task_queue",
+      "to": "vector_db",
+      "label": "Store Embeddings",
+      "fromSide": "top",
+      "toSide": "bottom",
+      "labelDx": 14
+    }
+  ],
+  "cards": [
+    {
+      "dot": "emerald",
+      "title": "API Gateway",
+      "items": [
+        "FastAPI service routing client traffic",
+        "Validates auth sessions against PostgreSQL metadata",
+        "Dispatches async ingestion tasks to Celery"
+      ]
+    },
+    {
+      "dot": "cyan",
+      "title": "Vector Retrieval",
+      "items": [
+        "ChromaDB / Pinecone vector indexing",
+        "Fast similarity search on embedded chunks",
+        "Supplies grounded context for LLM generation"
+      ]
+    },
+    {
+      "dot": "violet",
+      "title": "Ingestion Pipeline",
+      "items": [
+        "Celery background workers backed by Redis",
+        "Extracts, chunks, and embeds uploaded documents",
+        "Stores high-dimensional vectors directly to vector store"
+      ]
+    }
+  ]
+}
